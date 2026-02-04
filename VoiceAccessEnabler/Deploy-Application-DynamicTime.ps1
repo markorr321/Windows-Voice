@@ -269,17 +269,17 @@ Try {
             $completionMessage = @"
 Voice Access is now enabled!
 
-You have $timeRemaining minutes to configure Voice Access before Store access is automatically disabled by Intune.
+You have $timeRemaining minutes to complete the Voice Access setup wizard.
 
 To set up Voice Access:
 1. Open Settings
 2. Go to Accessibility → Speech → Voice Access
 3. Follow the setup wizard
 
-Intune will automatically revert Store backend changes in $timeRemaining minutes.
+This configuration window will automatically close in $timeRemaining minutes.
 "@
             If (Test-Path -LiteralPath $userMsgScript -PathType 'Leaf') {
-                Execute-ProcessAsUser -Path "$envWinDir\System32\WindowsPowerShell\v1.0\powershell.exe" -Parameters "-ExecutionPolicy Bypass -NoProfile -File `"$userMsgScript`" -Title 'Voice Access Enabled!' -Message `"$completionMessage`" -Icon Information"
+                Execute-ProcessAsUser -Path "$envWinDir\System32\WindowsPowerShell\v1.0\powershell.exe" -Parameters "-ExecutionPolicy Bypass -NoProfile -File `"$userMsgScript`" -Title 'Voice Access Enabled!' -Message `"$completionMessage`""
                 Write-Log -Message 'Completion message triggered via Execute-ProcessAsUser'
             } Else {
                 Write-Log -Message "User message script not found at: $userMsgScript" -Severity 2
@@ -287,7 +287,7 @@ Intune will automatically revert Store backend changes in $timeRemaining minutes
         } Else {
             # Running in Interactive mode - show dialog directly
             Write-Log -Message 'Running in Interactive mode - showing dialog directly'
-            Show-InstallationPrompt -Message "Voice Access is now enabled!`n`nYou have $timeRemaining minutes to configure Voice Access before Store access is automatically disabled by Intune.`n`nTo set up Voice Access:`n1. Open Settings`n2. Go to Accessibility → Speech → Voice Access`n3. Follow the setup wizard`n`nIntune will automatically revert Store backend changes in $timeRemaining minutes." -ButtonRightText 'OK' -Icon Information -TopMost $true
+            Show-InstallationPrompt -Message "Voice Access is now enabled!`n`nYou have $timeRemaining minutes to complete the Voice Access setup wizard.`n`nTo set up Voice Access:`n1. Open Settings`n2. Go to Accessibility → Speech → Voice Access`n3. Follow the setup wizard`n`nThis configuration window will automatically close in $timeRemaining minutes." -ButtonRightText 'OK' -TopMost $true
             Write-Log -Message 'Completion message displayed to user'
         }
     }
@@ -296,12 +296,6 @@ Intune will automatically revert Store backend changes in $timeRemaining minutes
         ##* PRE-UNINSTALLATION
         ##*===============================================
         [String]$installPhase = 'Pre-Uninstallation'
-
-        ## Show Welcome Message, close Internet Explorer with a 60 second countdown before automatically closing
-        Show-InstallationWelcome -CloseApps 'iexplore' -CloseAppsCountdown 60
-
-        ## Show Progress Message (with the default message)
-        Show-InstallationProgress
 
         ## <Perform Pre-Uninstallation tasks here>
 
@@ -321,9 +315,10 @@ Intune will automatically revert Store backend changes in $timeRemaining minutes
 
         ## <Perform Uninstallation tasks here>
 
-        ## Remove registry detection
-        Write-Log -Message 'Removing registry detection...'
+        ## Remove registry detection key for supersedence support
+        Write-Log -Message 'Removing registry detection key for supersedence...'
         Remove-Item -Path "HKLM:\SOFTWARE\VoiceAccessEnabler" -Recurse -Force -ErrorAction 'SilentlyContinue'
+        Write-Log -Message 'Uninstallation complete. Intune policies will automatically revert Store backend changes.'
 
 
         ##*===============================================

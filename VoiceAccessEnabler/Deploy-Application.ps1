@@ -108,7 +108,7 @@ Try {
     ##*===============================================
     ## Variables: Application
     [String]$appVendor = 'IT Department'
-    [String]$appName = 'Voice Access Enabler'
+    [String]$appName = 'Windows Voice Access Configuration'
     [String]$appVersion = '1.0'
     [String]$appArch = 'x64'
     [String]$appLang = 'EN'

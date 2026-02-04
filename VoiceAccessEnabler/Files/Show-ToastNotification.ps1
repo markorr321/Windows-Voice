@@ -8,7 +8,7 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$Message,
 
-    [string]$AppId = "Voice Access Enabler"
+    [string]$AppId = "Windows Voice Access Configuration"
 )
 
 # Get the logged-in user

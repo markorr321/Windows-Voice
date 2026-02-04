@@ -1,4 +1,4 @@
-# Voice Access Enabler - Simple Installation
+# Windows Voice Access Configuration - Simple Installation
 # No PSADT, No Scheduled Tasks
 
 # Show user notification
@@ -11,7 +11,7 @@ Store backend services will be temporarily enabled for Voice Access setup.
 Go to: Settings → Accessibility → Speech → Voice Access
 
 Intune will automatically revert these changes on the next policy sync (typically within 8 hours).",
-    "Voice Access Enabler",
+    "Windows Voice Access Configuration",
     "OK",
     "Information"
 ) | Out-Null

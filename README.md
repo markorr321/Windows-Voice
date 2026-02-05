@@ -166,6 +166,29 @@ Deploy-Application.exe -DeploymentType "Uninstall" -DeployMode "Silent"
 - Installation time: 60 minutes (allows full Config Refresh cycle)
 - Device restart behavior: Determine behavior based on return codes
 
+**8. Config Refresh:**
+- Enable Config Refresh with 60-minute cadence
+- This ensures automatic policy reversion after Voice Access installation
+
+#### Configuration Screenshots
+
+Below are the complete Intune configuration pages for reference:
+
+**App Information:**
+![App Information](Images/app-information.png)
+
+**Program Settings (Install/Uninstall Commands):**
+![Program Settings](Images/program-settings.png)
+
+**Requirements (x64, Windows 11+):**
+![Requirements](Images/requirements.png)
+
+**Detection Rules (Registry):**
+![Detection Rules](Images/detection-rules.png)
+
+**Config Refresh Settings:**
+![Config Refresh](Images/config-refresh.png)
+
 ### End User Experience
 
 1. User opens **Company Portal** app
@@ -177,7 +200,7 @@ Deploy-Application.exe -DeploymentType "Uninstall" -DeployMode "Silent"
 5. User completes Voice Access setup wizard
 6. Completion dialog confirms success
 7. Intune automatically reverts Store policies within the hour
-8. CIS compliance is restored automatically
+8. CIS compliance is restored programatically
 
 ## Technical Benefits
 

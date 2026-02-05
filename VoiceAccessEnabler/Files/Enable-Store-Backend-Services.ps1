@@ -32,15 +32,4 @@ foreach ($svc in $services) {
 # Clear Store cache
 Stop-Process -Name "WinStore.App" -Force -ErrorAction SilentlyContinue
 
-# Remove winget msstore source
-try {
-    $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
-    if ($wingetPath) {
-        & winget source remove msstore 2>&1 | Out-Null
-    }
-}
-catch {
-    # winget not available or already removed
-}
-
 Exit 0

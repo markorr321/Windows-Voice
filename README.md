@@ -67,19 +67,40 @@ Start-Service -Name "ClipSVC"        # Client License Service
 ```
 
 #### Phase 2: Dynamic Time Calculation
-The app calculates real-time countdown until Intune policy refresh:
+The app calculates real-time countdown until Intune policy refresh by querying the Config Refresh scheduled task:
+
+**How It Works:**
+1. **Query Scheduled Task**: Looks for the Intune-created task `"Schedule created by dm client to refresh settings"`
+2. **Get Next Run Time**: Retrieves `NextRunTime` from task info
+3. **Calculate Minutes**: Computes `[Math]::Round(($taskInfo.NextRunTime - (Get-Date)).TotalMinutes)`
+4. **Fallback**: Uses 60 minutes if task doesn't exist or calculation fails
 
 ```powershell
-# Query Intune's Config Refresh scheduled task
-$configTask = Get-ScheduledTask | Where-Object {
-    $_.TaskName -eq "Schedule created by dm client to refresh settings"
-}
+$timeRemaining = 60  # Default fallback for non-Intune devices
+Try {
+    $configTask = Get-ScheduledTask | Where-Object {
+        $_.TaskName -eq "Schedule created by dm client to refresh settings"
+    } | Select-Object -First 1
 
-$taskInfo = Get-ScheduledTaskInfo $configTask
-$minutesRemaining = [Math]::Round(($taskInfo.NextRunTime - (Get-Date)).TotalMinutes)
+    If ($configTask) {
+        $taskInfo = Get-ScheduledTaskInfo $configTask
+        If ($taskInfo.NextRunTime) {
+            $minutesRemaining = [Math]::Round(($taskInfo.NextRunTime - (Get-Date)).TotalMinutes)
+            If ($minutesRemaining -gt 0) {
+                $timeRemaining = $minutesRemaining
+            }
+        }
+    }
+} Catch {
+    # Use default 60-minute fallback
+}
 ```
 
-Users see: *"You have 47 minutes to complete the Voice Access setup wizard. This configuration window will automatically close in 47 minutes."*
+**User Experience:**
+Users see accurate countdown in PSAppDeployToolkit dialog:
+- *"You have 47 minutes to complete the Voice Access setup wizard. This configuration window will automatically close in 47 minutes."*
+- Timer is calculated at runtime, not hardcoded
+- Reflects actual Intune policy refresh schedule
 
 #### Phase 3: Automatic Reversion
 Intune Config Refresh automatically reverts policies within 60 minutes:
@@ -121,13 +142,14 @@ This ensures users see:
 VoiceAccessEnabler/
 ├── ServiceUI.exe                           # MDT ServiceUI for SYSTEM context UI
 ├── Deploy-Application.exe                  # PSAppDeployToolkit executable
-├── Deploy-Application-DynamicTime.ps1      # Main deployment script
+├── Deploy-Application-DynamicTime.ps1      # Main deployment script (uses dynamic time calculation)
 ├── AppDeployToolkit/                       # PSAppDeployToolkit framework
 ├── Files/
-│   ├── Enable-Store-Backend-Services.ps1   # Temporary Store backend enablement
-│   └── Show-UserMessage.ps1                # Custom dialog for notifications
+│   └── Enable-Store-Backend-Services.ps1   # Temporary Store backend enablement
 └── [Additional PSAppDeployToolkit files]
 ```
+
+**Note:** The package uses `Deploy-Application-DynamicTime.ps1` as the main deployment script, which calculates real-time countdown based on Intune's Config Refresh scheduled task.
 
 ### Intune Configuration
 
@@ -263,13 +285,6 @@ Temporarily enables Store backend:
 - Sets `AutoDownload = 4` (prevents auto-downloads)
 - Starts Windows Update and Store services
 - Removes winget msstore source
-
-### Show-UserMessage.ps1
-Custom Windows Forms dialog for notifications:
-- Bold, centered text
-- Customizable title and message
-- OK button with proper dialog result
-- Logging to temp directory
 
 ### ServiceUI.exe
 Microsoft Deployment Toolkit utility that:

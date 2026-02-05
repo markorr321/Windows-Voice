@@ -284,7 +284,7 @@ Temporarily enables Store backend:
 - Sets `RemoveWindowsStore = 0` (enables backend)
 - Sets `AutoDownload = 4` (prevents auto-downloads)
 - Starts Windows Update and Store services
-- Removes winget msstore source
+- Clears Store cache
 
 ### ServiceUI.exe
 Microsoft Deployment Toolkit utility that:

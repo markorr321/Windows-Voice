@@ -109,11 +109,11 @@ Try {
     ## Variables: Application
     [String]$appVendor = 'IT Department'
     [String]$appName = 'Windows Voice Access Configuration'
-    [String]$appVersion = '1.0'
+    [String]$appVersion = '1.1'
     [String]$appArch = 'x64'
     [String]$appLang = 'EN'
     [String]$appRevision = '01'
-    [String]$appScriptVersion = '1.0.0'
+    [String]$appScriptVersion = '1.1.0'
     [String]$appScriptDate = '02/04/2026'
     [String]$appScriptAuthor = 'IT Admin'
     ##*===============================================

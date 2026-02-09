@@ -287,7 +287,7 @@ This configuration window will automatically close in $timeRemaining minutes.
         } Else {
             # Running in Interactive mode - show dialog directly
             Write-Log -Message 'Running in Interactive mode - showing dialog directly'
-            Show-InstallationPrompt -Message "Voice Access is now enabled!`n`nYou have $timeRemaining minutes to complete the Voice Access setup wizard.`n`nTo set up Voice Access:`n1. Open Settings`n2. Go to Accessibility → Speech → Voice Access`n3. Follow the setup wizard`n`nThis configuration window will automatically close in $timeRemaining minutes." -ButtonRightText 'OK' -TopMost $true
+            Show-InstallationPrompt -Message "Voice Access is now enabled!`n`nYou have $timeRemaining minutes to complete the Voice Access setup wizard.`n`nTo set up Voice Access:`n1. Open Settings`n2. Go to Accessibility → Speech → Voice Access`n3. Follow the setup wizard`n`nThis configuration window will automatically close in $timeRemaining minutes." -ButtonRightText 'OK' -TopMost $true -NoWait
             Write-Log -Message 'Completion message displayed to user'
         }
     }

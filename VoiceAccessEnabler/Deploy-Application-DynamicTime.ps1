@@ -261,33 +261,42 @@ Try {
             Write-Log -Message "Could not calculate exact time remaining, using default: $($_.Exception.Message)" -Severity 2
         }
 
-        ## Display completion message to logged-in user
-        If ($deployMode -eq 'NonInteractive') {
-            # Running as SYSTEM from Intune - use Execute-ProcessAsUser
-            Write-Log -Message 'Running in NonInteractive mode - using Execute-ProcessAsUser to display message'
-            $userMsgScript = Join-Path -Path $dirFiles -ChildPath 'Show-UserMessage.ps1'
-            $completionMessage = @"
-Voice Access is now enabled!
+        ## Save setup instructions to user's Desktop for reference
+        Try {
+            $desktopPath = [System.Environment]::GetFolderPath('Desktop')
+            If (-not $desktopPath) {
+                $desktopPath = Join-Path -Path $envUserProfile -ChildPath 'Desktop'
+            }
+            $instructionsFile = Join-Path -Path $desktopPath -ChildPath 'Voice Access Setup Instructions.txt'
+            $instructionsContent = @"
+Voice Access Setup Instructions
+================================
 
 You have $timeRemaining minutes to complete the Voice Access setup wizard.
 
 To set up Voice Access:
 1. Open Settings
-2. Go to Accessibility → Speech → Voice Access
-3. Follow the setup wizard
+2. Go to Accessibility > Interaction > Speech > Voice Access
+3. Toggle Voice Access to on
+4. Follow the setup wizard
 
-This configuration window will automatically close in $timeRemaining minutes.
+Intune will automatically revert Store backend changes within $timeRemaining minutes.
+
+After completing Voice Access setup, you may delete this file.
 "@
-            If (Test-Path -LiteralPath $userMsgScript -PathType 'Leaf') {
-                Execute-ProcessAsUser -Path "$envWinDir\System32\WindowsPowerShell\v1.0\powershell.exe" -Parameters "-ExecutionPolicy Bypass -NoProfile -File `"$userMsgScript`" -Title 'Voice Access Enabled!' -Message `"$completionMessage`""
-                Write-Log -Message 'Completion message triggered via Execute-ProcessAsUser'
-            } Else {
-                Write-Log -Message "User message script not found at: $userMsgScript" -Severity 2
-            }
+            Set-Content -Path $instructionsFile -Value $instructionsContent -Force -ErrorAction 'SilentlyContinue'
+            Write-Log -Message "Setup instructions saved to: $instructionsFile"
+        } Catch {
+            Write-Log -Message "Could not save instructions to Desktop: $($_.Exception.Message)" -Severity 2
+        }
+
+        ## Display completion message to logged-in user
+        If ($deployMode -eq 'NonInteractive') {
+            Write-Log -Message 'Running in NonInteractive mode - skipping dialog'
         } Else {
             # Running in Interactive mode - show dialog directly
             Write-Log -Message 'Running in Interactive mode - showing dialog directly'
-            Show-InstallationPrompt -Message "Voice Access is now enabled!`n`nYou have $timeRemaining minutes to complete the Voice Access setup wizard.`n`nTo set up Voice Access:`n1. Open Settings`n2. Go to Accessibility → Speech → Voice Access`n3. Follow the setup wizard`n`nThis configuration window will automatically close in $timeRemaining minutes." -ButtonRightText 'OK' -TopMost $true -NoWait
+            Show-InstallationPrompt -Message "Voice Access is now enabled!`n`nYou have $timeRemaining minutes to complete the Voice Access setup wizard.`n`nSetup instructions have been saved to your Desktop:`nVoice Access Setup Instructions.txt`n`nYou must click OK to complete the installation.`nPlease wait for the install to finish before configuring Voice Access." -ButtonRightText 'OK' -TopMost $true
             Write-Log -Message 'Completion message displayed to user'
         }
     }

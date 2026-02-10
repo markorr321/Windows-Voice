@@ -261,12 +261,24 @@ Try {
             Write-Log -Message "Could not calculate exact time remaining, using default: $($_.Exception.Message)" -Severity 2
         }
 
-        ## Save setup instructions to user's Desktop for reference
+        ## Save setup instructions to logged-in user's Desktop (checks OneDrive redirect)
         Try {
-            $desktopPath = [System.Environment]::GetFolderPath('Desktop')
-            If (-not $desktopPath) {
-                $desktopPath = Join-Path -Path $envUserProfile -ChildPath 'Desktop'
+            $desktopPath = $null
+            $loggedInUser = (Get-CimInstance -ClassName Win32_ComputerSystem).UserName
+            If ($loggedInUser) {
+                $username = $loggedInUser.Split('\')[-1]
+                $userProfile = "C:\Users\$username"
+                ## Check for OneDrive Desktop first
+                $oneDriveDesktop = Get-ChildItem -Path $userProfile -Filter "OneDrive*" -Directory -ErrorAction SilentlyContinue |
+                    Where-Object { Test-Path (Join-Path $_.FullName 'Desktop') } |
+                    Select-Object -First 1
+                If ($oneDriveDesktop) {
+                    $desktopPath = Join-Path $oneDriveDesktop.FullName 'Desktop'
+                } Else {
+                    $desktopPath = Join-Path $userProfile 'Desktop'
+                }
             }
+            Write-Log -Message "Desktop path resolved to: $desktopPath"
             $instructionsFile = Join-Path -Path $desktopPath -ChildPath 'Voice Access Setup Instructions.txt'
             $instructionsContent = @"
 Voice Access Setup Instructions

@@ -261,12 +261,38 @@ Try {
         Set-ItemProperty -Path $regPath -Name "InstallDate" -Value (Get-Date -Format "yyyy-MM-dd HH:mm:ss") -Type String -ErrorAction 'SilentlyContinue'
         Write-Log -Message "Registry detection created at: $regPath"
 
-        ## Save setup instructions to user's Desktop for reference
+        ## Save setup instructions to logged-in user's Desktop (reads expanded shell folder from user's registry)
         Try {
-            $desktopPath = [System.Environment]::GetFolderPath('Desktop')
-            If (-not $desktopPath) {
-                $desktopPath = Join-Path -Path $envUserProfile -ChildPath 'Desktop'
+            $desktopPath = $null
+            $loggedInUser = (Get-Process -Name explorer -IncludeUserName -ErrorAction SilentlyContinue | Select-Object -First 1).UserName
+            If ($loggedInUser) {
+                $username = $loggedInUser.Split('\')[-1]
+                ## Get user SID from profile path (works for Azure AD and local accounts from SYSTEM context)
+                $userSID = (Get-CimInstance -ClassName Win32_UserProfile -ErrorAction SilentlyContinue |
+                    Where-Object { $_.LocalPath -eq "C:\Users\$username" }).SID
+                Write-Log -Message "Resolved SID: $userSID for user: $username"
+                ## Read Desktop path from user's registry hive (Shell Folders has expanded paths)
+                If ($userSID) {
+                    $regDesktop = (Get-ItemProperty -Path "Registry::HKU\$userSID\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" -Name 'Desktop' -ErrorAction SilentlyContinue).Desktop
+                }
+                If ($regDesktop -and (Test-Path -Path $regDesktop)) {
+                    $desktopPath = $regDesktop
+                    Write-Log -Message "Desktop path from Shell Folders: $desktopPath"
+                } Else {
+                    ## Fallback: check common OneDrive Desktop paths
+                    $oneDriveDesktop = Get-ChildItem -Path "C:\Users\$username" -Filter "OneDrive*" -Directory -ErrorAction SilentlyContinue |
+                        Where-Object { Test-Path (Join-Path $_.FullName 'Desktop') } |
+                        Select-Object -First 1
+                    If ($oneDriveDesktop) {
+                        $desktopPath = Join-Path $oneDriveDesktop.FullName 'Desktop'
+                        Write-Log -Message "Desktop path from OneDrive folder scan: $desktopPath"
+                    } Else {
+                        $desktopPath = "C:\Users\$username\Desktop"
+                        Write-Log -Message "Desktop path fallback: $desktopPath"
+                    }
+                }
             }
+            Write-Log -Message "Desktop path resolved to: $desktopPath"
             $instructionsFile = Join-Path -Path $desktopPath -ChildPath 'Voice Access Setup Instructions.txt'
             $instructionsContent = @"
 Voice Access Setup Instructions

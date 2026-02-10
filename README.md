@@ -219,10 +219,11 @@ Below are the complete Intune configuration pages for reference:
 4. PSAppDeployToolkit welcome dialog appears with:
    - Instructions to complete Voice Access setup
    - Dynamic countdown timer (e.g., "47 minutes remaining")
-5. User completes Voice Access setup wizard
-6. Completion dialog confirms success
-7. Intune automatically reverts Store policies within the hour
-8. CIS compliance is restored programatically
+5. Setup instructions file saved to user's Desktop (works with OneDrive Desktop)
+6. User completes Voice Access setup wizard
+7. Completion dialog confirms success
+8. Intune automatically reverts Store policies within the hour
+9. CIS compliance is restored programmatically
 
 ## Technical Benefits
 
@@ -271,13 +272,22 @@ Combined with ServiceUI.exe, it enables interactive user experiences even when r
 
 ## Files Breakdown
 
-### Deploy-Application-DynamicTime.ps1
+### Deploy-Application.ps1 / Deploy-Application-DynamicTime.ps1
 Main orchestration script that:
 - Calculates dynamic countdown from Intune scheduled task
 - Runs Enable-Store-Backend-Services.ps1
 - Displays PSAppDeployToolkit dialogs with real-time timers
 - Sets detection registry key
+- Saves setup instructions to the logged-in user's Desktop (supports OneDrive Known Folder Move)
 - Logs all operations
+
+#### Desktop Path Detection (SYSTEM Context)
+Since the app runs as SYSTEM via Intune, standard Desktop path methods fail. The script uses a multi-step approach to reliably find the user's actual Desktop, even when redirected to OneDrive:
+
+1. **Get logged-in user** from `explorer.exe` process owner (reliable from SYSTEM context, unlike `Win32_ComputerSystem.UserName` which returns null during Intune installs)
+2. **Resolve user SID** via `Win32_UserProfile` (works for Azure AD accounts where `Win32_UserAccount` fails)
+3. **Read Desktop path** from `HKU\<SID>\...\Shell Folders\Desktop` (contains expanded paths like `C:\Users\<user>\OneDrive - Company\Desktop`)
+4. **Fallback** to scanning `OneDrive*\Desktop` folders, then standard `C:\Users\<user>\Desktop`
 
 ### Enable-Store-Backend-Services.ps1
 Temporarily enables Store backend:
@@ -353,5 +363,5 @@ For issues or questions:
 ---
 
 **Created for:** Organizations balancing security compliance with accessibility requirements
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** February 2026
